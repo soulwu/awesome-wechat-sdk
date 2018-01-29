@@ -1,4 +1,5 @@
-import axios, {AxiosRequestConfig, AxiosInstance, AxiosPromise} from 'axios';
+import urllib from 'urllib';
+import {UrlLibOptions, UrlLibResponse} from './types/urllib';
 import * as querystring from 'querystring';
 import * as crypto from 'crypto';
 
@@ -162,15 +163,30 @@ export default class Wechat {
     }
   }
 
-  private axiosInstance: AxiosInstance = axios.create({responseType: 'json'});
+  private defaults: UrlLibOptions = {};
 
-  setOpts(opts: AxiosRequestConfig) {
-    this.axiosInstance.defaults = opts;
+  setOpts(opts: UrlLibOptions) {
+    this.defaults = opts;
+  }
+
+  private request(url: string, opts: UrlLibOptions = {}): Promise<UrlLibResponse> {
+    const options = Object.assign({}, this.defaults);
+    Object.keys(opts).forEach((k) => {
+      if (k !== 'headers') {
+        options[k] = opts[k];
+      } else {
+        if (opts.headers) {
+          options.headers = Object.assign({}, options.headers, opts.headers);
+        }
+      }
+    });
+
+    return urllib.request(url, options);
   }
 
   private getAccessToken(): Promise<AccessToken> {
     const url = `${this.endpoint}/cgi-bin/token?grant_type=client_credential&appid=${this.appid}&secret=${this.appsecret}`;
-    return this.axiosInstance.get(url).then((response) => {
+    return this.request(url, {dataType: 'json'}).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.exipres_in - 10) * 1000;
       const token = new AccessToken(data.access_token, expireTime);
@@ -193,7 +209,7 @@ export default class Wechat {
   private getTicket(type: 'jsapi' | 'wx_card' = 'jsapi'): Promise<Ticket> {
     return this.getLatestAccessToken().then((token) => {
       const url = `${this.endpoint}/cgi-bin/ticket/getticket?access_token=${token.accessToken}&type=${type}`;
-      return this.axiosInstance.get(url);
+      return this.request(url, {dataType: 'json'});
     }).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.expires_in - 10) * 1000;
@@ -247,7 +263,7 @@ export default class Wechat {
 
   private getAuthAccessToken(code: string): Promise<AuthAccessToken> {
     const url = `${this.endpoint}/sns/oauth2/access_token?appid=${this.appid}&secret=${this.appsecret}&code=${code}&grant_type=authorization_code`;
-    return this.axiosInstance.get(url).then((response) => {
+    return this.request(url, {dataType: 'json'}).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.expires_in - 10) * 1000;
       const token = new AuthAccessToken(data.access_token, expireTime, data.refresh_token, data.openid);
@@ -259,7 +275,7 @@ export default class Wechat {
 
   private refreshAuthAccessToken(refreshToken: string): Promise<AuthAccessToken> {
     const url = `${this.endpoint}/sns/oauth2/refresh_token?appid=${this.appid}&grant_type=refresh_token&refresh_token=${refreshToken}`;
-    return this.axiosInstance.get(url).then((response) => {
+    return this.request(url, {dataType: 'json'}).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.expires_in - 10) * 1000;
       const token = new AuthAccessToken(data.access_token, expireTime, data.refresh_token, data.openid);
@@ -271,7 +287,7 @@ export default class Wechat {
 
   private _getAuthUser(openid: string, token: string, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<UserInfo> {
     const url = `${this.endpoint}/sns/userinfo?access_token=${token}&openid=${openid}&lang=${lang}`;
-    return this.axiosInstance.get(url).then((response) => {
+    return this.request(url, {dataType: 'json'}).then((response) => {
       return processWechatResponse(response.data);
     });
   }
@@ -293,6 +309,12 @@ export default class Wechat {
     });
   }
 
+  getOpenidByCode(code: string): Promise<string> {
+    return this.getAuthAccessToken(code).then((token) => {
+      return token.openid;
+    });
+  }
+
   getAuthUserByCode(code: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<UserInfo> {
     return this.getAuthAccessToken(code).then((token) => {
       return this.getAuthUser(token.openid, lang);
@@ -301,7 +323,7 @@ export default class Wechat {
 
   private verifyToken(openid: string, accessToken: string): Promise<void> {
     const url = `${this.endpoint}/sns/auth?access_token=${accessToken}&openid=${openid}`;
-    return this.axiosInstance.get(url).then((response) => {
+    return this.request(url, {dataType: 'json'}).then((response) => {
       processWechatResponse(response.data);
     });
   }

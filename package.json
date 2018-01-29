@@ -1,10 +1,10 @@
 {
   "name": "awesome-wechat-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "an awesome sdk for wechat oauth and api",
   "scripts": {
     "build": "tsc",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "main": "lib/wechat.js",
   "types": "lib/wechat.d.ts",
@@ -12,7 +12,7 @@
   "author": "soulwu",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.17.1"
+    "urllib": "^2.25.4"
   },
   "devDependencies": {
     "@types/node": "^9.3.0",
