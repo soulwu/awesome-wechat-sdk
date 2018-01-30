@@ -1,4 +1,4 @@
-import urllib from 'urllib';
+import * as urllib from 'urllib';
 import {UrlLibOptions, UrlLibResponse} from './types/urllib';
 import * as querystring from 'querystring';
 import * as crypto from 'crypto';
