@@ -21,9 +21,9 @@ function processWechatResponse(data) {
 export class AccessToken {
   readonly accessToken: string;
   readonly expireTime: number;
-  constructor(accessToken: string, expireTime: number) {
-    this.accessToken = accessToken;
-    this.expireTime = expireTime;
+  constructor(token: {accessToken: string, expireTime: number}) {
+    this.accessToken = token.accessToken;
+    this.expireTime = token.expireTime;
   }
 
   isValid(): boolean {
@@ -40,10 +40,12 @@ export class AccessToken {
 export class AuthAccessToken extends AccessToken {
   readonly refreshToken: string;
   readonly openid: string;
-  constructor(accessToken: string, expireTime: number, refreshToken: string, openid: string) {
-    super(accessToken, expireTime);
-    this.refreshToken = refreshToken;
-    this.openid = openid;
+  readonly scope: string;
+  constructor(token: {accessToken: string, expireTime: number, refreshToken: string, openid: string, scope: string}) {
+    super(token);
+    this.refreshToken = token.refreshToken;
+    this.openid = token.openid;
+    this.scope = token.scope;
   }
 
   toJSON(): string {
@@ -51,7 +53,8 @@ export class AuthAccessToken extends AccessToken {
       accessToken: this.accessToken,
       expireTime: this.expireTime,
       refreshToken: this.refreshToken,
-      openid: this.openid
+      openid: this.openid,
+      scope: this.scope
     });
   }
 }
@@ -71,9 +74,9 @@ export interface UserInfo {
 export class Ticket {
   readonly ticket: string;
   readonly expireTime: number;
-  constructor(ticket: string, expireTime: number) {
-    this.ticket = ticket;
-    this.expireTime = expireTime;
+  constructor(ticket: {ticket: string, expireTime: number}) {
+    this.ticket = ticket.ticket;
+    this.expireTime = ticket.expireTime;
   }
 
   isValid(): boolean {
@@ -189,7 +192,7 @@ export default class Wechat {
     return this.request(url, {dataType: 'json'}).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.exipres_in - 10) * 1000;
-      const token = new AccessToken(data.access_token, expireTime);
+      const token = new AccessToken({accessToken: data.access_token, expireTime});
       return this.saveAccessToken(token).then(() => {
         return token;
       });
@@ -213,7 +216,7 @@ export default class Wechat {
     }).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.expires_in - 10) * 1000;
-      const ticket = new Ticket(data.ticket, expireTime);
+      const ticket = new Ticket({ticket: data.ticket, expireTime});
       return this.saveTicket(type, ticket).then(() => {
         return ticket;
       })
@@ -266,7 +269,7 @@ export default class Wechat {
     return this.request(url, {dataType: 'json'}).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.expires_in - 10) * 1000;
-      const token = new AuthAccessToken(data.access_token, expireTime, data.refresh_token, data.openid);
+      const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
       return this.saveAuthAccessToken(data.openid, token).then(() => {
         return token;
       });
@@ -278,7 +281,7 @@ export default class Wechat {
     return this.request(url, {dataType: 'json'}).then((response) => {
       const data = processWechatResponse(response.data);
       const expireTime = Date.now() + (data.expires_in - 10) * 1000;
-      const token = new AuthAccessToken(data.access_token, expireTime, data.refresh_token, data.openid);
+      const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
       return this.saveAuthAccessToken(data.openid, token).then(() => {
         return token;
       });
