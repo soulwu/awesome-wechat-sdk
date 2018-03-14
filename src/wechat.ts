@@ -61,13 +61,14 @@ export class AuthAccessToken extends AccessToken {
 
 export interface UserInfo {
   openid: string;
-  nickname: string;
-  sex: '1' | '2';
-  province: string;
-  city: string;
-  country: string;
-  headimgurl: string;
-  privilege: string[];
+  scope: string;
+  nickname?: string;
+  sex?: '1' | '2';
+  province?: string;
+  city?: string;
+  country?: string;
+  headimgurl?: string;
+  privilege?: string[];
   unionid?: string;
 }
 
@@ -288,10 +289,10 @@ export default class Wechat {
     });
   }
 
-  private _getAuthUser(openid: string, token: string, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<UserInfo> {
-    const url = `${this.endpoint}/sns/userinfo?access_token=${token}&openid=${openid}&lang=${lang}`;
+  private _getAuthUser(openid: string, token: AuthAccessToken, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<UserInfo> {
+    const url = `${this.endpoint}/sns/userinfo?access_token=${token.accessToken}&openid=${openid}&lang=${lang}`;
     return this.request(url, {dataType: 'json'}).then((response) => {
-      return processWechatResponse(response.data);
+      return Object.assign({scope: token.scope}, processWechatResponse(response.data));
     });
   }
 
@@ -302,19 +303,18 @@ export default class Wechat {
         error.name = 'NoOAuthTokenError';
         throw error;
       }
-      if (token.isValid()) {
-        return this._getAuthUser(openid, token.accessToken, lang);
+      if (token.scope.indexOf('snsapi_userinfo') >= 0) {
+        return {
+          openid,
+          scope: token.scope
+        };
+      } else if (token.isValid()) {
+        return this._getAuthUser(openid, token, lang);
       } else {
         return this.refreshAuthAccessToken(token.refreshToken).then((token) => {
-          return this._getAuthUser(openid, token.accessToken, lang);
+          return this._getAuthUser(openid, token, lang);
         });
       }
-    });
-  }
-
-  getOpenidByCode(code: string): Promise<string> {
-    return this.getAuthAccessToken(code).then((token) => {
-      return token.openid;
     });
   }
 
