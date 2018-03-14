@@ -303,7 +303,7 @@ export default class Wechat {
         error.name = 'NoOAuthTokenError';
         throw error;
       }
-      if (token.scope.indexOf('snsapi_userinfo') >= 0) {
+      if (!/snsapi_userinfo/.test(token.scope)) {
         return {
           openid,
           scope: token.scope
