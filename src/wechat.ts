@@ -32,11 +32,11 @@ export class AccessToken {
   isValid(): boolean {
     return !!this.accessToken && Date.now() < this.expireTime;
   }
-  toJSON(): string {
-    return JSON.stringify({
+  toJSON(): object {
+    return {
       accessToken: this.accessToken,
       expireTime: this.expireTime
-    });
+    };
   }
 }
 
@@ -51,14 +51,14 @@ export class AuthAccessToken extends AccessToken {
     this.scope = token.scope;
   }
 
-  toJSON(): string {
-    return JSON.stringify({
+  toJSON(): object {
+    return {
       accessToken: this.accessToken,
       expireTime: this.expireTime,
       refreshToken: this.refreshToken,
       openid: this.openid,
       scope: this.scope
-    });
+    };
   }
 }
 
@@ -86,11 +86,11 @@ export class Ticket {
   isValid(): boolean {
     return !!this.ticket && Date.now() < this.expireTime;
   }
-  toJSON(): string {
-    return JSON.stringify({
+  toJSON(): object {
+    return {
       ticket: this.ticket,
       expireTime: this.expireTime
-    });
+    };
   }
 }
 
