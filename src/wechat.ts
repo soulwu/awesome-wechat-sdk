@@ -3,11 +3,14 @@ import {UrlLibOptions, UrlLibResponse} from './types/urllib';
 import * as querystring from 'querystring';
 import * as crypto from 'crypto';
 
+const debug = require('debug')('awesome-wechat-sdk');
+
 export class WechatError extends Error {
   code: number;
 }
 
 function processWechatResponse(data) {
+  debug('process response %j', data);
   if (data.errcode) {
     const err = new WechatError(data.errmsg);
     err.name = 'WeChatAPIError';
@@ -185,6 +188,7 @@ export default class Wechat {
       }
     });
 
+    debug('request for url %s with options %j', url, options);
     return urllib.request(url, options);
   }
 
