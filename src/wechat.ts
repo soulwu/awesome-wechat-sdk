@@ -63,6 +63,26 @@ export class AuthAccessToken extends AccessToken {
 }
 
 export interface UserInfo {
+  subscribe: 0 | 1;
+  openid: string;
+  nickname?: string;
+  sex?: 0 | 1 | 2;
+  language?: string;
+  city?: string;
+  province?: string;
+  country?: string;
+  headimgurl?: string;
+  subscribe_time?: number;
+  unionid?: string;
+  remark?: string;
+  groupid?: number;
+  tagid_list?: number[];
+  subscribe_scene?: string;
+  qr_scene?: number;
+  qr_scene_str?: string;
+}
+
+export interface AuthUserInfo {
   openid: string;
   scope: string;
   nickname?: string;
@@ -214,6 +234,31 @@ export default class Wechat {
     })
   }
 
+  getUser(openid: string): Promise<UserInfo> {
+    return this.getLatestAccessToken().then((token) => {
+      const url = `${this.endpoint}/cgi-bin/user/info?access_token=${token.accessToken}&openid=${openid}&lang=zh_CN`;
+      return this.request(url, {dataType: 'json'});
+    }).then((response) => {
+      return processWechatResponse(response.data);
+    });
+  }
+
+  batchGetUser(openids: string[]): Promise<UserInfo[]> {
+    return this.getLatestAccessToken().then((token) => {
+      const url = `${this.endpoint}/cgi-bin/user/info/batchget?access_token=${token.accessToken}`;
+      return this.request(url, {
+        dataType: 'json',
+        method: 'POST',
+        data: {
+          user_list: openids.map(openid => ({openid, lang: 'zh_CN'}))
+        }
+      });
+    }).then((response) => {
+      const data = processWechatResponse(response.data);
+      return data.user_info_list;
+    });
+  }
+
   private getTicket(type: 'jsapi' | 'wx_card' = 'jsapi'): Promise<Ticket> {
     return this.getLatestAccessToken().then((token) => {
       const url = `${this.endpoint}/cgi-bin/ticket/getticket?access_token=${token.accessToken}&type=${type}`;
@@ -293,14 +338,14 @@ export default class Wechat {
     });
   }
 
-  private _getAuthUser(openid: string, token: AuthAccessToken, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<UserInfo> {
+  private _getAuthUser(openid: string, token: AuthAccessToken, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<AuthUserInfo> {
     const url = `${this.endpoint}/sns/userinfo?access_token=${token.accessToken}&openid=${openid}&lang=${lang}`;
     return this.request(url, {dataType: 'json'}).then((response) => {
       return Object.assign({scope: token.scope}, processWechatResponse(response.data));
     });
   }
 
-  getAuthUser(openid: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<UserInfo> {
+  getAuthUser(openid: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<AuthUserInfo> {
     return this.loadAuthAccessToken(openid).then((token) => {
       if (!token) {
         const error = new Error(`No token for ${openid}, please authorize first.`);
@@ -322,13 +367,13 @@ export default class Wechat {
     });
   }
 
-  getAuthUserByCode(code: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<UserInfo> {
+  getAuthUserByCode(code: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<AuthUserInfo> {
     return this.getAuthAccessToken(code).then((token) => {
       return this.getAuthUser(token.openid, lang);
     });
   }
 
-  private verifyToken(openid: string, accessToken: string): Promise<void> {
+  verifyToken(openid: string, accessToken: string): Promise<void> {
     const url = `${this.endpoint}/sns/auth?access_token=${accessToken}&openid=${openid}`;
     return this.request(url, {dataType: 'json'}).then((response) => {
       processWechatResponse(response.data);
