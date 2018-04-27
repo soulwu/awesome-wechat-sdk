@@ -259,6 +259,26 @@ export default class Wechat {
     });
   }
 
+  sendTemplateMessage(openid: string, templateId: string, data: object = {}, link: {url?: string, miniprogram?: {appid: string, pagepath: string}} = {}): Promise<number> {
+    return this.getLatestAccessToken().then((token) => {
+      const url = `${this.endpoint}/cgi-bin/message/template/send?access_token=${token.accessToken}`;
+      return this.request(url, {
+        dataType: 'json',
+        method: 'POST',
+        data: {
+          touser: openid,
+          template_id: templateId,
+          url: link.url,
+          miniprogram: link.miniprogram,
+          data
+        }
+      });
+    }).then((response) => {
+      const data = processWechatResponse(response.data);
+      return data.msgid;
+    });
+  }
+
   private getTicket(type: 'jsapi' | 'wx_card' = 'jsapi'): Promise<Ticket> {
     return this.getLatestAccessToken().then((token) => {
       const url = `${this.endpoint}/cgi-bin/ticket/getticket?access_token=${token.accessToken}&type=${type}`;
