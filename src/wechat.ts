@@ -248,6 +248,7 @@ export default class Wechat {
       const url = `${this.endpoint}/cgi-bin/user/info/batchget?access_token=${token.accessToken}`;
       return this.request(url, {
         dataType: 'json',
+        contentType: 'json',
         method: 'POST',
         data: {
           user_list: openids.map(openid => ({openid, lang: 'zh_CN'}))
@@ -264,6 +265,7 @@ export default class Wechat {
       const url = `${this.endpoint}/cgi-bin/message/template/send?access_token=${token.accessToken}`;
       return this.request(url, {
         dataType: 'json',
+        contentType: 'json',
         method: 'POST',
         data: {
           touser: openid,
