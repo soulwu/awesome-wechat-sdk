@@ -147,15 +147,13 @@ export class Handler {
   private appid: string;
   private encodingAESKey: string;
   private readonly handlers: Map<string, Handle>;
-  private readonly handle: Handle;
   private cryptor: WXBizMsgCrypt;
 
-  constructor(config?: HandlerConfig, handle?: Handle) {
+  constructor(config?: HandlerConfig) {
     if (config) {
       this.setConfig(config);
     }
     this.handlers = new Map<string, Handle>();
-    this.handle = handle;
   }
 
   setConfig(config: HandlerConfig): void {
@@ -169,7 +167,7 @@ export class Handler {
   }
 
   getHandler(type: string): Handle {
-    return this.handlers.get(type) || this.handle || (() => Promise.resolve(''))
+    return this.handlers.get(type) || this.handlers.get('any') || (() => Promise.resolve(''))
   }
 
   setHandler(type: string, handle: Handle): Handler {
@@ -215,6 +213,10 @@ export class Handler {
 
   device_event(handle: Handle): Handler {
     return this.setHandler('device_event', handle);
+  }
+
+  any(handle: Handle): Handler {
+    return this.setHandler('any', handle);
   }
 
   middlewarify() {
@@ -294,16 +296,6 @@ export class Handler {
   }
 }
 
-export const middleware = (config?: HandlerConfig, handle?: Handle | Handler) => {
-  if (!handle) {
-    return new Handler(config);
-  }
-  if (handle instanceof Handler) {
-    if (config) {
-      handle.setConfig(config);
-    }
-    return handle.middlewarify();
-  } else {
-    return new Handler(config, handle).middlewarify();
-  }
+export const middleware = (config?: HandlerConfig) => {
+  return new Handler(config);
 };
