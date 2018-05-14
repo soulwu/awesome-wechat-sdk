@@ -51,9 +51,12 @@ export class WXBizMsgCrypt {
   }
 
   getSignature(timestamp: string, nonce: string, encrypt: string): string {
+    debug('timestamp[%s] nonce[%s] encrypt[%s]', timestamp, nonce, encrypt);
     const sha1 = crypto.createHash('sha1');
     sha1.update([this.token, timestamp, nonce, encrypt].sort().join(''));
-    return sha1.digest('hex');
+    const signature = sha1.digest('hex');
+    debug('signature: %s', signature);
+    return signature;
   }
 
   encrypt(message: string): string {

@@ -2,11 +2,18 @@ import * as crypto from 'crypto';
 import * as xml2js from 'xml2js';
 import {WXBizMsgCrypt} from './crypto';
 
+const debug = require('debug')('awesome-wechat-sdk:middleware');
+
 function getSignature(timestamp: string, nonce: string, token: string): string {
+  debug('timestamp[%s] nonce[%s] token[%s]', timestamp, nonce, token);
+
   var sha1 = crypto.createHash('sha1');
   sha1.update([token, timestamp, nonce].sort().join(''));
 
-  return sha1.digest('hex');
+  const signature = sha1.digest('hex');
+  debug('signature: %s', signature);
+
+  return signature;
 }
 
 function parseXML(xml: string): object {
@@ -72,7 +79,7 @@ function reply(content: ReplyContent, fromUserName: string, toUserName: string) 
     FromUserName: fromUserName,
     CreateTime: Math.floor(Date.now() / 1000),
     MsgType: content.type || 'text'
-  }
+  };
   switch (content.type) {
     case 'text':
       return builder.buildObject({
@@ -122,13 +129,13 @@ function reply(content: ReplyContent, fromUserName: string, toUserName: string) 
         }
       });
     case 'transfer_customer_service':
-      if ((<ServiceContent>content.content).kfAccount) {
+      if (content.content && (<ServiceContent>content.content).kfAccount) {
         return builder.buildObject({
           ...info,
           TransInfo: {
             KfAccount: (<ServiceContent>content.content).kfAccount
           }
-        })
+        });
       }
       return builder.buildObject(info);
     default:
@@ -167,7 +174,7 @@ export class Handler {
   }
 
   getHandler(type: string): Handle {
-    return this.handlers.get(type) || this.handlers.get('any') || (() => Promise.resolve(''))
+    return this.handlers.get(type) || this.handlers.get('any') || (() => Promise.resolve(''));
   }
 
   setHandler(type: string, handle: Handle): Handler {
@@ -272,6 +279,7 @@ export class Handler {
           }
           message = await parseXML(decryptedXML);
         }
+        debug('message: %j', message);
         const handle = this.getHandler(message.MsgType);
         const body = await handle(message, ctx);
 
@@ -286,6 +294,7 @@ export class Handler {
             Nonce: nonce
           });
         }
+        debug('replyMessage: %s', replyMessage);
         ctx.type = 'application/xml';
         ctx.body = replyMessage;
       } else {
