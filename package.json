@@ -1,10 +1,13 @@
 {
   "name": "awesome-wechat-sdk",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "an awesome sdk for wechat oauth, api and message middleware",
   "scripts": {
+    "prebuild": "rimraf lib",
     "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "pretest": "npm run build",
+    "test": "mocha"
   },
   "main": "lib/wechat.js",
   "types": "lib/wechat.d.ts",
@@ -16,11 +19,17 @@
   },
   "dependencies": {
     "debug": "^3.1.0",
+    "lodash": "^4.17.10",
+    "lodash-decorators": "^5.0.0",
     "urllib": "^2.25.4",
     "xml2js": "^0.4.19"
   },
   "devDependencies": {
     "@types/node": "^9.3.0",
+    "chai": "^4.1.2",
+    "commander": "^2.15.1",
+    "mocha": "^5.1.1",
+    "rimraf": "^2.6.2",
     "typescript": "^2.8.3"
   }
 }
