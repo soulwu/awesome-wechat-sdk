@@ -9,12 +9,19 @@ import OAuth, {AuthAccessToken} from './oauth';
 import User from './user';
 import Template from './template';
 import Menu from './menu';
+import IP from './ip';
+import CustomService from './custom_service';
+import QRCode from './qrcode';
+import URL from './url';
+import Quota from './quota';
+import Material from './material';
+import Media from './media';
 
 const debug = require('debug')('awesome-wechat-sdk:api');
 
 export {WechatAPIError, AccessToken, Ticket, AuthAccessToken};
 
-@Mixin(Common, JS, OAuth, User, Template, Menu)
+@Mixin(Common, JS, OAuth, User, Template, Menu, IP, CustomService, QRCode, URL, Quota, Material, Media)
 export class WechatApi {
   readonly appid: string;
   readonly appsecret: string;
@@ -45,7 +52,7 @@ export class WechatApi {
     this.defaults = opts;
   }
 
-  request(url: string, opts: UrlLibOptions = {}): Promise<UrlLibResponse> {
+  async request(url: string, opts: UrlLibOptions = {}): Promise<UrlLibResponse> {
     const options = Object.assign({}, this.defaults);
     Object.keys(opts).forEach((k) => {
       if (k !== 'headers') {
@@ -58,6 +65,6 @@ export class WechatApi {
     });
 
     debug('request for url %s with options %j', url, options);
-    return urllib.request(url, options);
+    return await urllib.request(url, options);
   }
 }

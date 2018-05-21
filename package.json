@@ -1,6 +1,6 @@
 {
   "name": "awesome-wechat-sdk",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "an awesome sdk for wechat oauth, api and message middleware",
   "scripts": {
     "prebuild": "rimraf lib",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "debug": "^3.1.0",
+    "formstream": "^1.1.0",
     "lodash": "^4.17.10",
     "lodash-decorators": "^5.0.0",
     "urllib": "^2.25.4",

@@ -19,12 +19,11 @@ export class AccessToken {
 }
 
 export default {
-  loadAccessToken(): Promise<AccessToken> {
-    return Promise.resolve(this.store.accessToken);
+  async loadAccessToken(): Promise<AccessToken> {
+    return this.store.accessToken;
   },
-  saveAccessToken(token: AccessToken): Promise<void> {
+  async saveAccessToken(token: AccessToken): Promise<void> {
     this.store.accessToken = token;
-    return Promise.resolve();
   },
   registerAccessTokenHandler(handler: {loadAccessToken?: () => Promise<AccessToken>, saveAccessToken?: (token: AccessToken) => Promise<void>} = {}): void {
     if (handler.loadAccessToken) {
@@ -34,24 +33,21 @@ export default {
       this.saveAccessToken = handler.saveAccessToken;
     }
   },
-  getAccessToken(): Promise<AccessToken> {
+  async getAccessToken(): Promise<AccessToken> {
     const url = `${this.endpoint}/cgi-bin/token?grant_type=client_credential&appid=${this.appid}&secret=${this.appsecret}`;
-    return this.request(url, {dataType: 'json'}).then((response) => {
-      const data = processWechatResponse(response.data);
-      const expireTime = Date.now() + (data.expires_in - 10) * 1000;
-      const token = new AccessToken({accessToken: data.access_token, expireTime});
-      return this.saveAccessToken(token).then(() => {
-        return token;
-      });
-    });
+    const response = await this.request(url, {dataType: 'json'});
+    const data = processWechatResponse(response.data);
+    const expireTime = Date.now() + (data.expires_in - 10) * 1000;
+    const token = new AccessToken({accessToken: data.access_token, expireTime});
+    await this.saveAccessToken(token);
+    return token;
   },
-  getLatestAccessToken(): Promise<AccessToken> {
-    return this.loadAccessToken().then((token) => {
-      if (token && token.isValid()) {
-        return token;
-      } else {
-        return this.getAccessToken();
-      }
-    })
+  async getLatestAccessToken(): Promise<AccessToken> {
+    const token = await this.loadAccessToken();
+    if (token && token.isValid()) {
+      return token;
+    } else {
+      return await this.getAccessToken();
+    }
   }
 };

@@ -21,28 +21,44 @@ export interface UserInfo {
 }
 
 export default {
-  getUser(openid: string): Promise<UserInfo> {
-    return this.getLatestAccessToken().then((token) => {
-      const url = `${this.endpoint}/cgi-bin/user/info?access_token=${token.accessToken}&openid=${openid}&lang=zh_CN`;
-      return this.request(url, {dataType: 'json'});
-    }).then((response) => {
-      return processWechatResponse(response.data);
-    });
+  async getUser(openid: string): Promise<UserInfo> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/user/info?access_token=${token.accessToken}&openid=${openid}&lang=zh_CN`;
+    const response = await this.request(url, {dataType: 'json'});
+    return processWechatResponse(response.data);
   },
-  batchGetUser(openids: string[]): Promise<UserInfo[]> {
-    return this.getLatestAccessToken().then((token) => {
-      const url = `${this.endpoint}/cgi-bin/user/info/batchget?access_token=${token.accessToken}`;
-      return this.request(url, {
-        dataType: 'json',
-        contentType: 'json',
-        method: 'POST',
-        data: {
-          user_list: openids.map(openid => ({openid, lang: 'zh_CN'}))
-        }
-      });
-    }).then((response) => {
-      const data = processWechatResponse(response.data);
-      return data.user_info_list;
+  async batchGetUser(openids: string[]): Promise<UserInfo[]> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/user/info/batchget?access_token=${token.accessToken}`;
+    const response = await this.request(url, {
+      method: 'POST',
+      contentType: 'json',
+      data: {
+        user_list: openids.map(openid => ({openid, lang: 'zh_CN'}))
+      },
+      dataType: 'json'
     });
+    const data = processWechatResponse(response.data);
+    return data.user_info_list;
+  },
+  async getFollowers(nextOpenid?: string): Promise<{total: number, count: number, data: {openid: string[]}, next_openid?: string}> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/user/get?access_token=${token.accessToken}${nextOpenid ? `&next_openid=${nextOpenid}` : ''}`;
+    const response = await this.request(url, {dataType: 'json'});
+    return processWechatResponse(response.data);
+  },
+  async updateRemark(openid: string, remark: string): Promise<void> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/user/info/updateremark?access_token=${token.accessToken}`;
+    const response = await this.request(url, {
+      method: 'POST',
+      contentType: 'json',
+      data: {
+        openid,
+        remark
+      },
+      dataType: 'json'
+    });
+    processWechatResponse(response.data);
   }
 };

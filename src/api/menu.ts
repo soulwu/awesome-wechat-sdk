@@ -18,43 +18,35 @@ export interface GroupButton {
 export type Button = IndividualButton | GroupButton;
 
 export default {
-  createMenu(button: Button[]): Promise<object> {
-    return this.getLatestAccessToken().then((token) => {
-      const url = `${this.endpoint}/cgi-bin/menu/create?access_token=${token.accessToken}`;
-      return this.request(url, {
-        method: 'POST',
-        contentType: 'json',
-        data: {
-          button
-        },
-        dataType: 'json'
-      });
-    }).then((response) => {
-      return processWechatResponse(response.data);
+  async createMenu(button: Button[]): Promise<void> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/menu/create?access_token=${token.accessToken}`;
+    const response = await this.request(url, {
+      method: 'POST',
+      contentType: 'json',
+      data: {
+        button
+      },
+      dataType: 'json'
     });
+    processWechatResponse(response.data);
   },
-  getMenu(): Promise<object> {
-    return this.getLatestAccessToken().then((token) => {
-      const url = `${this.endpoint}/cgi-bin/menu/get?access_token=${token.accessToken}`;
-      return this.request(url, {dataType: 'json'});
-    }).then((response) => {
-      return processWechatResponse(response.data);
-    });
+  async getMenu(): Promise<object> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/menu/get?access_token=${token.accessToken}`;
+    const response = await this.request(url, {dataType: 'json'});
+    return processWechatResponse(response.data);
   },
-  removeMenu(): Promise<object> {
-    return this.getLatestAccessToken().then((token) => {
-      const url = `${this.endpoint}/cgi-bin/menu/delete?access_token=${token.accessToken}`;
-      return this.request(url, {dataType: 'json'});
-    }).then((response) => {
-      return processWechatResponse(response.data);
-    });
+  async removeMenu(): Promise<void> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/menu/delete?access_token=${token.accessToken}`;
+    const response = await this.request(url, {dataType: 'json'});
+    processWechatResponse(response.data);
   },
-  getMenuConfig(): Promise<object> {
-    return this.getLatestAccessToken().then((token) => {
-      const url = `${this.endpoint}/cgi-bin/get_current_selfmenu_info?access_token=${token.accessToken}`;
-      return this.request(url, {dataType: 'json'});
-    }).then((response) => {
-      return processWechatResponse(response.data);
-    });
+  async getMenuConfig(): Promise<object> {
+    const token = await this.getLatestAccessToken();
+    const url = `${this.endpoint}/cgi-bin/get_current_selfmenu_info?access_token=${token.accessToken}`;
+    const response = await this.request(url, {dataType: 'json'});
+    return processWechatResponse(response.data);
   }
 };

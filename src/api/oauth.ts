@@ -42,12 +42,11 @@ export interface AuthUserInfo {
 }
 
 export default {
-  loadAuthAccessToken(openid: string): Promise<AuthAccessToken> {
-    return Promise.resolve(this.store.authAccessToken[openid]);
+  async loadAuthAccessToken(openid: string): Promise<AuthAccessToken> {
+    return this.store.authAccessToken[openid];
   },
-  saveAuthAccessToken(openid: string, token: AuthAccessToken): Promise<void> {
+  async saveAuthAccessToken(openid: string, token: AuthAccessToken): Promise<void> {
     this.store.authAccessToken[openid] = token;
-    return Promise.resolve();
   },
   registerAuthAccessTokenHandler(handler: {loadAuthAccessToken?: (openid: string) => Promise<AuthAccessToken>, saveAuthAccessToken?: (openid: string, token: AuthAccessToken) => Promise<void>} = {}): void {
     if (handler.loadAuthAccessToken) {
@@ -69,64 +68,59 @@ export default {
 
     return `${url}?${querystring.stringify(info)}#wechat_redirect`;
   },
-  getAuthAccessToken(code: string): Promise<AuthAccessToken> {
+  async getAuthAccessToken(code: string): Promise<AuthAccessToken> {
     const url = `${this.endpoint}/sns/oauth2/access_token?appid=${this.appid}&secret=${this.appsecret}&code=${code}&grant_type=authorization_code`;
-    return this.request(url, {dataType: 'json'}).then((response) => {
-      const data = processWechatResponse(response.data);
-      const expireTime = Date.now() + (data.expires_in - 10) * 1000;
-      const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
-      return this.saveAuthAccessToken(data.openid, token).then(() => {
-        return token;
-      });
-    })
+    const response = await this.request(url, {dataType: 'json'});
+    const data = processWechatResponse(response.data);
+    const expireTime = Date.now() + (data.expires_in - 10) * 1000;
+    const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
+    await this.saveAuthAccessToken(data.openid, token);
+    return token;
   },
-  refreshAuthAccessToken(refreshToken: string): Promise<AuthAccessToken> {
+  async refreshAuthAccessToken(refreshToken: string): Promise<AuthAccessToken> {
     const url = `${this.endpoint}/sns/oauth2/refresh_token?appid=${this.appid}&grant_type=refresh_token&refresh_token=${refreshToken}`;
-    return this.request(url, {dataType: 'json'}).then((response) => {
-      const data = processWechatResponse(response.data);
-      const expireTime = Date.now() + (data.expires_in - 10) * 1000;
-      const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
-      return this.saveAuthAccessToken(data.openid, token).then(() => {
-        return token;
-      });
-    });
+    const response = await this.request(url, {dataType: 'json'});
+    const data = processWechatResponse(response.data);
+    const expireTime = Date.now() + (data.expires_in - 10) * 1000;
+    const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
+    await this.saveAuthAccessToken(data.openid, token);
+    return token;
   },
-  _getAuthUser(openid: string, token: AuthAccessToken, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<AuthUserInfo> {
+  async _getAuthUser(openid: string, token: AuthAccessToken, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<AuthUserInfo> {
     const url = `${this.endpoint}/sns/userinfo?access_token=${token.accessToken}&openid=${openid}&lang=${lang}`;
-    return this.request(url, {dataType: 'json'}).then((response) => {
-      return Object.assign({scope: token.scope}, processWechatResponse(response.data));
-    });
+    const response = await this.request(url, {dataType: 'json'});
+    const data = processWechatResponse(response.data);
+    return {
+      ...data,
+      scope: token.scope
+    };
   },
-  getAuthUser(openid: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<AuthUserInfo> {
-    return this.loadAuthAccessToken(openid).then((token) => {
-      if (!token) {
-        const error = new Error(`No token for ${openid}, please authorize first.`);
-        error.name = 'NoOAuthTokenError';
-        throw error;
-      }
-      if (!/snsapi_userinfo/.test(token.scope)) {
-        return {
-          openid,
-          scope: token.scope
-        };
-      } else if (token.isValid()) {
-        return this._getAuthUser(openid, token, lang);
-      } else {
-        return this.refreshAuthAccessToken(token.refreshToken).then((token) => {
-          return this._getAuthUser(openid, token, lang);
-        });
-      }
-    });
+  async getAuthUser(openid: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<AuthUserInfo> {
+    let token = await this.loadAuthAccessToken(openid);
+    if (!token) {
+      const error = new Error(`No token for ${openid}, please authorize first.`);
+      error.name = 'NoOAuthTokenError';
+      throw error;
+    }
+    if (!/snsapi_userinfo/.test(token.scope)) {
+      return {
+        openid,
+        scope: token.scope
+      };
+    } else if (token.isValid()) {
+      return await this._getAuthUser(openid, token, lang);
+    } else {
+      token = await this.refreshAuthAccessToken(token.refreshToken);
+      return await this._getAuthUser(openid, token, lang);
+    }
   },
-  getAuthUserByCode(code: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<AuthUserInfo> {
-    return this.getAuthAccessToken(code).then((token) => {
-      return this.getAuthUser(token.openid, lang);
-    });
+  async getAuthUserByCode(code: string, lang: 'zh_CN' | 'zh_TW' | 'en' = 'zh_CN'): Promise<AuthUserInfo> {
+    const token = await this.getAuthAccessToken(code);
+    return await this.getAuthUser(token.openid, lang);
   },
-  verifyToken(openid: string, accessToken: string): Promise<void> {
+  async verifyToken(openid: string, accessToken: string): Promise<void> {
     const url = `${this.endpoint}/sns/auth?access_token=${accessToken}&openid=${openid}`;
-    return this.request(url, {dataType: 'json'}).then((response) => {
-      processWechatResponse(response.data);
-    });
+    const response = await this.request(url, {dataType: 'json'});
+    processWechatResponse(response.data);
   }
 };

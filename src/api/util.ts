@@ -4,7 +4,7 @@ export class WechatAPIError extends Error {
   code: number;
 }
 
-export function processWechatResponse(data) {
+export function processWechatResponse(data: any): any {
   debug('process response %j', data);
   if (data.errcode) {
     const err = new WechatAPIError(data.errmsg);
