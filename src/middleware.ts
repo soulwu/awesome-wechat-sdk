@@ -16,7 +16,7 @@ function getSignature(timestamp: string, nonce: string, token: string): string {
   return signature;
 }
 
-function parseXML(xml: string): object {
+function parseXML(xml: string): Promise<any> {
   return new Promise((resolve, reject) => {
     xml2js.parseString(xml, {
       explicitArray: false,

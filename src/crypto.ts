@@ -63,7 +63,7 @@ export class WXBizMsgCrypt {
     const cipher = crypto.createCipheriv('aes-256-cbc', this.key, this.iv);
     cipher.setAutoPadding(false);
 
-    const random = crypto.pseudoRandomBytes(16);
+    const random = crypto.randomBytes(16);
     const msg = Buffer.from(message);
     const msgLength = Buffer.alloc(4);
     msgLength.writeInt32BE(msg.length, 0);

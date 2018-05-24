@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const util = require('util');
 const chai = require('chai');
 const urllib = require('urllib');
 const wechat = require('../lib/wechat');
