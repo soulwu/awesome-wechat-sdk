@@ -51,7 +51,11 @@ export interface OrderInfo {
   attach?: string;
   timeEnd: string;
   tradeStateDesc: string;
-  [coupon$n: string]: string | number;
+  coupon?: Array<{
+    type?: 'CASH' | 'NO_CASH',
+    id?: string,
+    fee?: number
+  }>;
 };
 
 export interface RefundReq {
@@ -81,7 +85,11 @@ export interface RefundResp {
   cashRefundFee?: number;
   couponRefundFee?: number;
   couponRefundCount?: number;
-  [couponRefund$n: string]: string | number;
+  coupon?: Array<{
+    type?: 'CASH' | 'NO_CASH',
+    refundFee?: number,
+    refundId?: string
+  }>
 };
 
 export interface Refund {
@@ -93,7 +101,24 @@ export interface Refund {
   feeType?: string;
   cashFee: number;
   refundCount: number;
-  [refund$n: string]: string | number;
+  refund: Array<{
+    outRefundNo?: string,
+    refundId?: string,
+    refundChannel?: 'ORIGINAL' | 'BALANCE' | 'OTHER_BALANCE' | 'OTHER_BANKCARD',
+    refundFee?: number,
+    settlementRefundFee?: number,
+    couponRefundFee?: number,
+    couponRefundCount?: number,
+    coupon?: Array<{
+      type?: 'CASH' | 'NO_CASH',
+      refundId?: string,
+      refundFee?: number
+    }>,
+    refundStatus?: 'SUCCESS' | 'REFUNDCLOSE' | 'PROCESSING' | 'CHANGE',
+    refundAccount?: 'REFUND_SOURCE_RECHARGE_FUNDS' | 'REFUND_SOURCE_UNSETTLED_FUNDS',
+    refundRecvAccout?: string,
+    refundSuccessTime?: string
+  }>
 };
 
 function parseXML(xml: string): Promise<any> {
@@ -241,7 +266,7 @@ export class WechatPay {
       throw new Error(`${ret.err_code}|${ret.err_code_des}`);
     }
 
-    return mapKeys(omit(ret, ['return_code', 'return_msg', 'appid', 'mch_id', 'nonce_str', 'sign', 'result_code', 'err_code', 'err_code_des']), (v, k) => camelCase(k));
+    return omit(ret, ['return_code', 'return_msg', 'appid', 'mch_id', 'nonce_str', 'sign', 'result_code', 'err_code', 'err_code_des']);
   }
 
   async unifiedOrder(req: UnifiedOrderReq, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<UnifiedOrderResp> {
@@ -266,7 +291,8 @@ export class WechatPay {
       })
     });
     const ret = await parseXML(response.data.toString());
-    return <UnifiedOrderResp>await this._processResponse(ret, signType);
+    const data = await this._processResponse(ret, signType);
+    return mapKeys(data, (v, k) => camelCase(k));
   }
 
   async getPaySign(prepayId: string, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<{
@@ -318,7 +344,24 @@ export class WechatPay {
       })
     });
     const ret = await parseXML(response.data.toString());
-    return <OrderInfo>await this._processResponse(ret, signType);
+    const data = await this._processResponse(ret, signType);
+    const order = <OrderInfo>{};
+    Object.keys(data).forEach((k) => {
+      const match = /coupon_(type|id|fee)_\$(\d+)/.exec(k);
+      if (match) {
+        if (!order.coupon) {
+          order.coupon = [];
+        }
+        const index = Number(match[2]);
+        if (!order.coupon[index]) {
+          order.coupon[index] = {};
+        }
+        order.coupon[index][match[1]] = data[k];
+      } else {
+        order[camelCase(k)] = data[k];
+      }
+    });
+    return order;
   }
 
   async queryOrderByOutTradeNo(outTradeNo: string, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<OrderInfo> {
@@ -381,7 +424,24 @@ export class WechatPay {
       })
     });
     const ret = await parseXML(response.data.toString());
-    return <RefundResp>await this._processResponse(ret, signType);
+    const data = await this._processResponse(ret, signType);
+    const refund = <RefundResp>{};
+    Object.keys(data).forEach((k) => {
+      const match = /coupon_(type|refund_fee|refund_id)_\$(\d+)/.exec(k);
+      if (match) {
+        if (!refund.coupon) {
+          refund.coupon = [];
+        }
+        const index = Number(match[2]);
+        if (!refund.coupon[index]) {
+          refund.coupon[index] = {};
+        }
+        refund.coupon[index][camelCase(match[1])] = data[k];
+      } else {
+        refund[camelCase(k)] = data[k];
+      }
+    });
+    return refund;
   }
 
   async queryRefund(req: {
@@ -412,7 +472,35 @@ export class WechatPay {
       })
     });
     const ret = await parseXML(response.data.toString());
-    return <Refund>await this._processResponse(ret, signType);
+    const data = await this._processResponse(ret, signType);
+    const refund = <Refund>{};
+    Object.keys(data).forEach((k) => {
+      const match = /([a-z_]+)_\$(\d+)(?:_\$(\d)+)?/.exec(k);
+      if (match) {
+        if (!refund.refund) {
+          refund.refund = [];
+        }
+        const n = Number(match[2]);
+        if (!refund.refund[n]) {
+          refund.refund[n] = {};
+        }
+        if (!match[3]) {
+          refund.refund[n][camelCase(match[1])] = data[k];
+        } else {
+          if (!refund.refund[n].coupon) {
+            refund.refund[n].coupon = [];
+          }
+          const m = Number(match[3]);
+          if (!refund.refund[n].coupon[m]) {
+            refund.refund[n].coupon[m] = {};
+          }
+          refund.refund[n].coupon[m][camelCase(match[1].substr(7))] = data[k];
+        }
+      } else {
+        refund[camelCase(k)] = data[k];
+      }
+    });
+    return refund;
   }
 
   async downloadBill(billDate: string, billType: 'ALL' | 'SUCCESS' | 'REFUND' | 'RECHARGE_REFUND' = 'ALL', signType: 'MD5' | 'HMAC-SHA256' = 'MD5', tarType?: 'GZIP'): Promise<string> {
