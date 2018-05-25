@@ -286,13 +286,25 @@ export class WechatPay {
       package: packageStr,
       signType
     };
-    const sign = await this.getSign(params, signType);
+    const stringPaySignTemp = Object.keys(params).sort().map(k => [k, params[k]].join('=')).join('&');
+    debug('stringPaySignTemp: %s', stringPaySignTemp);
+    let hash;
+    if (signType === 'MD5') {
+      hash = crypto.createHash('md5');
+    } else if (signType === 'HMAC-SHA256') {
+      hash = crypto.createHmac('sha256', await this.getKey());
+    } else {
+      throw new Error('unsupported signType, only support MD5 or HMAC-SHA256');
+    }
+    hash.update(stringPaySignTemp);
+    const paySign = hash.digest('hex').toUpperCase();
+    debug('paySign: %s', paySign);
     return {
       timestamp: timeStamp,
       nonceStr,
       package: packageStr,
       signType,
-      paySign: sign
+      paySign
     };
   }
 
