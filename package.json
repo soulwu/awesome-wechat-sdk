@@ -1,6 +1,6 @@
 {
   "name": "awesome-wechat-sdk",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "an awesome sdk for wechat oauth, api and message middleware",
   "scripts": {
     "prebuild": "rimraf lib",

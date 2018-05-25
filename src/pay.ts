@@ -14,7 +14,7 @@ export interface UnifiedOrderReq {
   outTradeNo: string;
   feeType?: string;
   totalFee: number;
-  userIp: string;
+  spbillCreateIp: string;
   timeStart?: string;
   timeExpire?: string;
   goodsTag?: string;
