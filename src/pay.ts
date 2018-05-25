@@ -280,7 +280,7 @@ export class WechatPay {
     const nonceStr = createNonceStr();
     const packageStr = `prepay_id=${prepayId}`;
     const params = {
-      appid: this.appid,
+      appId: this.appid,
       timeStamp,
       nonceStr,
       package: packageStr,
