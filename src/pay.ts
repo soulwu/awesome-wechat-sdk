@@ -269,6 +269,33 @@ export class WechatPay {
     return <UnifiedOrderResp>await this._processResponse(ret, signType);
   }
 
+  async getPaySign(prepayId: string, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<{
+    timestamp: number,
+    nonceStr: string,
+    package: string,
+    signType: 'MD5' | 'HMAC-SHA256',
+    paySign: string
+  }> {
+    const timeStamp = Math.floor(Date.now() / 1000);
+    const nonceStr = createNonceStr();
+    const packageStr = `prepay_id=${prepayId}`;
+    const params = {
+      appid: this.appid,
+      timeStamp,
+      nonceStr,
+      package: packageStr,
+      signType
+    };
+    const sign = await this.getSign(params, signType);
+    return {
+      timestamp: timeStamp,
+      nonceStr,
+      package: packageStr,
+      signType,
+      paySign: sign
+    };
+  }
+
   async queryOrder(query: {outTradeNo?: string, transactionId?: string}, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<OrderInfo> {
     const url = `${this.endpoint}/pay/orderquery`;
     const nonceStr = createNonceStr();
