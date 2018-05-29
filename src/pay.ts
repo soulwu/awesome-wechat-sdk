@@ -35,7 +35,7 @@ export interface UnifiedOrderResp {
 export interface OrderInfo {
   deviceInfo?: string;
   openid: string;
-  isSAubscribe?: 'Y' | 'N';
+  isSubscribe?: 'Y' | 'N';
   tradeType: 'JSAPI' | 'NATIVE' | 'APP' | 'MICROPAY';
   tradeState: 'SUCCESS' | 'REFUND' | 'NOTPAY' | 'CLOSED' | 'REVOKED' | 'USERPAYING' | 'PAYERROR';
   bankType: string;
@@ -258,15 +258,14 @@ export class WechatPay {
       throw new Error(ret.return_msg);
     }
     const {sign, ...restRet} = ret;
-    const verifySign = await this.getSign(restRet, signType);
-    if (sign !== verifySign) {
+    if (sign && sign !== await this.getSign(restRet, signType)) {
       throw new Error('signature mismatch');
     }
     if (ret.result_code !== 'SUCCESS') {
       throw new Error(`${ret.err_code}|${ret.err_code_des}`);
     }
 
-    return omit(ret, ['return_code', 'return_msg', 'appid', 'mch_id', 'nonce_str', 'sign', 'result_code', 'err_code', 'err_code_des']);
+    return omit(ret, ['return_code', 'return_msg', 'appid', 'mch_appid', 'mch_id', 'mchid', 'nonce_str', 'sign', 'result_code', 'err_code', 'err_code_des']);
   }
 
   async unifiedOrder(req: UnifiedOrderReq, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<UnifiedOrderResp> {
@@ -621,5 +620,89 @@ export class WechatPay {
       await this._processResponse(ret, 'HMAC-SHA256');
     }
     return response.data.toString();
+  }
+
+  async transfer(req: {
+    deviceInfo?: string,
+    partnerTradeNo: string,
+    openid: string,
+    checkName: 'NO_CHECK' | 'FORCE_CHECK',
+    reUserName?: string,
+    amount: number,
+    desc: string,
+    spbillCreateIp: string
+  }): Promise<{
+    deviceInfo?: string,
+    partnerTradeNo: string,
+    paymentNo: string,
+    paymentTime: string
+  }> {
+    if (!this.pfx) {
+      throw new Error('pfx needed');
+    }
+    const url = `${this.endpoint}/mmpaymkttransfers/promotion/transfers`;
+    const nonceStr = createNonceStr();
+    const params = {
+      ...mapKeys(req, (v, k) => snakeCase(k)),
+      mch_appid: this.appid,
+      mchid: this.mchid,
+      nonce_str: nonceStr
+    };
+    const sign = await this.getSign(params);
+    const response = await this.request(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/xml'
+      },
+      pfx: this.pfx,
+      passphrase: this.passphrase,
+      data: builder.buildObject({
+        ...params,
+        sign
+      })
+    });
+    const ret = await parseXML(response.data.toString());
+    const data = await this._processResponse(ret);
+    return mapKeys(data, (v, k) => camelCase(k));
+  }
+
+  async queryTransfer(partnerTradeNo: string): Promise<{
+    partnerTradeNo: string,
+    detailId: string,
+    status: 'SUCCESS' | 'FAILED' | 'PROCESSING',
+    reason?: string,
+    openid: string,
+    transferName?: string,
+    paymentAmount: number,
+    transferTime: string,
+    desc: string
+  }> {
+    if (!this.pfx) {
+      throw new Error('pfx needed');
+    }
+    const url = `${this.endpoint}/mmpaymkttransfers/gettransferinfo`;
+    const nonceStr = createNonceStr();
+    const params = {
+      nonce_str: nonceStr,
+      partner_trade_no: partnerTradeNo,
+      mch_id: this.mchid,
+      appid: this.appid
+    };
+    const sign = await this.getSign(params);
+    const response = await this.request(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/xml'
+      },
+      pfx: this.pfx,
+      passphrase: this.passphrase,
+      data: builder.buildObject({
+        ...params,
+        sign
+      })
+    });
+    const ret = await parseXML(response.data.toString());
+    const data = await this._processResponse(ret);
+    return mapKeys(data, (v, k) => camelCase(k));
   }
 }
