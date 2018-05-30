@@ -1,13 +1,5 @@
-import {processWechatResponse, WechatAPIError} from './util';
-
 export default {
   async createQRCode(expire: number, scene: number | string): Promise<{ticket: string, expire_seconds: number, url: string}> {
-    if (expire < 0 || expire > 2592000) {
-      const err = new WechatAPIError('expire should be in range [0, 2592000]');
-      err.name = 'WechatAPIError';
-      err.code = 40035;
-      throw err;
-    }
     const isLimit = expire === 0;
     const isStr = typeof scene === 'string';
     const token = await this.getLatestAccessToken();
@@ -24,7 +16,7 @@ export default {
       },
       dataType: 'json'
     });
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
 
   showQRCodeURL(ticket: string): string {

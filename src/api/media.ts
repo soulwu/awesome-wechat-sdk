@@ -1,5 +1,4 @@
 import * as Formstream from 'formstream';
-import {processWechatResponse} from './util';
 
 export default {
   async uploadMedia(type: 'image' | 'voice' | 'video' | 'thumb', media: Buffer, filename: string): Promise<{type: 'image' | 'voice' | 'video' | 'thumb', media_id: string, created_at: number}> {
@@ -14,7 +13,7 @@ export default {
       dataType: 'json',
       timeout: 60000
     });
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async getMedia(mediaId: string): Promise<Buffer|string> {
     const token = await this.getLatestAccessToken();
@@ -24,7 +23,7 @@ export default {
     });
     const contentType = response.res.headers['content-type'];
     if (contentType === 'application/json' || contentType === 'text/plain') {
-      const data = processWechatResponse(JSON.parse(response.data.toString()));
+      const data = await this._processWechatResponse(JSON.parse(response.data.toString()));
       return data.video_url;
     }
     return response.data;

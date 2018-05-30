@@ -1,5 +1,4 @@
 import * as querystring from 'querystring';
-import {processWechatResponse} from './util';
 
 export class AuthAccessToken {
   readonly accessToken: string;
@@ -71,7 +70,7 @@ export default {
   async getAuthAccessToken(code: string): Promise<AuthAccessToken> {
     const url = `${this.endpoint}/sns/oauth2/access_token?appid=${this.appid}&secret=${this.appsecret}&code=${code}&grant_type=authorization_code`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     const expireTime = Date.now() + (data.expires_in - 10) * 1000;
     const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
     await this.saveAuthAccessToken(data.openid, token);
@@ -80,7 +79,7 @@ export default {
   async refreshAuthAccessToken(refreshToken: string): Promise<AuthAccessToken> {
     const url = `${this.endpoint}/sns/oauth2/refresh_token?appid=${this.appid}&grant_type=refresh_token&refresh_token=${refreshToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     const expireTime = Date.now() + (data.expires_in - 10) * 1000;
     const token = new AuthAccessToken({accessToken: data.access_token, expireTime, refreshToken: data.refresh_token, openid: data.openid, scope: data.scope});
     await this.saveAuthAccessToken(data.openid, token);
@@ -89,7 +88,7 @@ export default {
   async _getAuthUser(openid: string, token: AuthAccessToken, lang: 'zh_CN' | 'zh_TW' | 'en'): Promise<AuthUserInfo> {
     const url = `${this.endpoint}/sns/userinfo?access_token=${token.accessToken}&openid=${openid}&lang=${lang}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return {
       ...data,
       scope: token.scope
@@ -121,6 +120,6 @@ export default {
   async verifyToken(openid: string, accessToken: string): Promise<void> {
     const url = `${this.endpoint}/sns/auth?access_token=${accessToken}&openid=${openid}`;
     const response = await this.request(url, {dataType: 'json'});
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   }
 };

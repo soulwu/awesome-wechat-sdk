@@ -1,5 +1,4 @@
 import * as Formstream from 'formstream';
-import {processWechatResponse} from './util';
 
 export interface Article {
   title: string;
@@ -24,7 +23,7 @@ export default {
       },
       dataType: 'json'
     });
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.media_id;
   },
   async uploadNewsMaterialImg(image: Buffer, filename: string = 'image.jpg'): Promise<string> {
@@ -39,7 +38,7 @@ export default {
       dataType: 'json',
       timeout: 60000
     });
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.url;
   },
   async updateNewsMaterial(mediaId: string, index: number, article: Article): Promise<void> {
@@ -55,7 +54,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async _addMaterial(form: Formstream, type: 'image' | 'voice' | 'video' | 'thumb'): Promise<{media_id: string, url?: string}> {
     const token = await this.getLatestAccessToken();
@@ -67,7 +66,7 @@ export default {
       dataType: 'json',
       timeout: 60000
     });
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async addImageMaterial(image: Buffer, filename: string = 'image.jpg'): Promise<{media_id: string, url: string}> {
     const form = new Formstream();
@@ -106,7 +105,7 @@ export default {
     });
     const contentType = response.res.headers['content-type'];
     if (contentType === 'application/json' || contentType === 'text/plain') {
-      return processWechatResponse(JSON.parse(response.data.toString()));
+      return await this._processWechatResponse(JSON.parse(response.data.toString()));
     }
     return response.data;
   },
@@ -121,7 +120,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async getMaterialCount(): Promise<{
     voice_count: number,
@@ -132,7 +131,7 @@ export default {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/cgi-bin/material/get_materialcount?access_token=${token.accessToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async batchGetMaterial(type: 'image' | 'video' | 'voice' | 'news', offset: number, count: number): Promise<{
     total_count: number,
@@ -159,6 +158,6 @@ export default {
       },
       dataType: 'json'
     });
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   }
 };

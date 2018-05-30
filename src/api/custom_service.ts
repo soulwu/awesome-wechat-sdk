@@ -1,5 +1,4 @@
 import * as Formstream from 'formstream';
-import {processWechatResponse} from './util';
 
 export interface KF {
   kf_account: string;
@@ -58,13 +57,13 @@ export default {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/cgi-bin/get_current_autoreply_info?access_token=${token.accessToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async getKFList(): Promise<KF[]> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/cgi-bin/customservice/getkflist?access_token=${token.accessToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.kf_list;
   },
   async addKFAccount(account: string, nickname: string): Promise<void> {
@@ -79,7 +78,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async inviteWorker(account: string, wx: string): Promise<void> {
     const token = await this.getLatestAccessToken();
@@ -93,7 +92,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async updateKFAccount(account: string, nickname: string): Promise<void> {
     const token = await this.getLatestAccessToken();
@@ -107,7 +106,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async setKFAccountAvatar(account: string, avatar: Buffer, filename: string = 'headimg.png'): Promise<void> {
     const token = await this.getLatestAccessToken();
@@ -121,13 +120,13 @@ export default {
       dataType: 'json',
       timeout: 60000
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async delKFAccount(account: string): Promise<void> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/customservice/kfaccount/del?access_token=${token.accessToken}&kf_account=${account}`;
     const response = await this.request(url, {dataType: 'json'});
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async createKFSession(openid: string, account: string): Promise<void> {
     const token = await this.getLatestAccessToken();
@@ -141,7 +140,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async closeKFSession(openid: string, account: string): Promise<void> {
     const token = await this.getLatestAccessToken();
@@ -155,26 +154,26 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async getKFSession(openid: string): Promise<{createtime: number, kf_account: string}> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/customservice/kfsession/getsession?access_token=${token.accessToken}&openid=${openid}`;
     const response = await this.request(url, {dataType: 'json'});
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async getKFSessionList(account: string): Promise<Array<{createtime: number, openid: string}>> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/customservice/kfsession/getsessionlist?access_token=${token.accessToken}&kf_account=${account}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.sessionlist;
   },
   async getWaitCaseList(): Promise<{count: number, waitcaselist: Array<{latest_time: number, openid: string}>}> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/customservice/kfsession/getwaitcase?access_token=${token.accessToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async getMsgRecordList(starttime: number, endtime: number, msgid: number = 1, number: number = 10000): Promise<{
     recordlist: Array<{
@@ -200,6 +199,6 @@ export default {
       },
       dataType: 'json'
     });
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   }
 };

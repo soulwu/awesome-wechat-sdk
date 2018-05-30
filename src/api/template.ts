@@ -1,5 +1,3 @@
-import {processWechatResponse} from './util';
-
 export interface Template {
   template_id: string;
   title: string;
@@ -27,13 +25,13 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async getIndustry(): Promise<{primary_industry: Industry, secondary_industry: Industry}> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/cgi-bin/template/get_industry?access_token=${token.accessToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    return processWechatResponse(response.data);
+    return await this._processWechatResponse(response.data);
   },
   async addTemplate(shortId: string): Promise<string> {
     const token = await this.getLatestAccessToken();
@@ -46,14 +44,14 @@ export default {
       },
       dataType: 'json'
     });
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.template_id;
   },
   async getAllPrivateTemplate(): Promise<Template[]> {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/cgi-bin/template/get_all_private_template?access_token=${token.accessToken}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.template_list;
   },
   async delPrivateTemplate(templateId: string): Promise<void> {
@@ -67,7 +65,7 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   },
   async sendTemplateMessage(openid: string, templateId: string, data: object = {}, link: {url?: string, miniprogram?: {appid: string, pagepath: string}} = {}): Promise<string> {
     const token = await this.getLatestAccessToken();
@@ -84,7 +82,7 @@ export default {
       },
       dataType: 'json'
     });
-    const responseData = processWechatResponse(response.data);
+    const responseData = await this._processWechatResponse(response.data);
     return responseData.msgid;
   }
 };

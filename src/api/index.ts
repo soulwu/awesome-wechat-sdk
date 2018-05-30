@@ -2,8 +2,7 @@ import * as urllib from 'urllib';
 import {UrlLibOptions, UrlLibResponse} from '../types/urllib';
 import {Mixin} from 'lodash-decorators';
 
-import {WechatAPIError} from './util';
-import Common, {AccessToken} from './common'
+import Common, {WechatAPIError, AccessToken} from './common'
 import JS, {Ticket} from './js';
 import OAuth, {AuthAccessToken} from './oauth';
 import User from './user';

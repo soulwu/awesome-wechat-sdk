@@ -1,4 +1,8 @@
-import {processWechatResponse} from './util';
+const debug = require('debug')('awesome-wechat-sdk:api:common');
+
+export class WechatAPIError extends Error {
+  code: number;
+}
 
 export class AccessToken {
   readonly accessToken: string;
@@ -33,10 +37,24 @@ export default {
       this.saveAccessToken = handler.saveAccessToken;
     }
   },
+  async _processWechatResponse(data: any): Promise<any> {
+    debug('process response %j', data);
+    if (data.errcode) {
+      const err = new WechatAPIError(data.errmsg);
+      err.name = 'WechatAPIError';
+      err.code = data.errcode;
+      if (data.errcode === 40001) {
+        await this.saveAccessToken(new AccessToken({accessToken: null, expireTime: null}));
+      }
+      throw err;
+    }
+
+    return data;
+  },
   async getAccessToken(): Promise<AccessToken> {
     const url = `${this.endpoint}/cgi-bin/token?grant_type=client_credential&appid=${this.appid}&secret=${this.appsecret}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     const expireTime = Date.now() + (data.expires_in - 10) * 1000;
     const token = new AccessToken({accessToken: data.access_token, expireTime});
     await this.saveAccessToken(token);

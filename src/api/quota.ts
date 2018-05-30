@@ -1,5 +1,3 @@
-import {processWechatResponse} from './util';
-
 export default {
   async clearQuota(): Promise<void> {
     const token = await this.getLatestAccessToken();
@@ -12,6 +10,6 @@ export default {
       },
       dataType: 'json'
     });
-    processWechatResponse(response.data);
+    await this._processWechatResponse(response.data);
   }
 };

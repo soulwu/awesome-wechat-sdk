@@ -1,5 +1,3 @@
-import {processWechatResponse} from './util';
-
 export default {
   async shortUrl(longUrl: string): Promise<string> {
     const token = await this.getLatestAccessToken();
@@ -13,7 +11,7 @@ export default {
       },
       dataType: 'json'
     });
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     return data.short_url;
   }
 };

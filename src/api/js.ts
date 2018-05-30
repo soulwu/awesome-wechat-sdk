@@ -1,5 +1,4 @@
 import * as crypto from 'crypto';
-import {processWechatResponse} from './util';
 
 const debug = require('debug')('awesome-wechat-sdk:api:js');
 
@@ -53,7 +52,7 @@ export default {
     const token = await this.getLatestAccessToken();
     const url = `${this.endpoint}/cgi-bin/ticket/getticket?access_token=${token.accessToken}&type=${type}`;
     const response = await this.request(url, {dataType: 'json'});
-    const data = processWechatResponse(response.data);
+    const data = await this._processWechatResponse(response.data);
     const expireTime = Date.now() + (data.expires_in - 10) * 1000;
     const ticket = new Ticket({ticket: data.ticket, expireTime});
     await this.saveTicket(type, ticket);
