@@ -346,7 +346,7 @@ export class WechatPay {
     const data = await this._processResponse(ret, signType);
     const order = <OrderInfo>{};
     Object.keys(data).forEach((k) => {
-      const match = /coupon_(type|id|fee)_\$(\d+)/.exec(k);
+      const match = /coupon_(type|id|fee)_\$?(\d+)/.exec(k);
       if (match) {
         if (!order.coupon) {
           order.coupon = [];
@@ -426,7 +426,7 @@ export class WechatPay {
     const data = await this._processResponse(ret, signType);
     const refund = <RefundResp>{};
     Object.keys(data).forEach((k) => {
-      const match = /coupon_(type|refund_fee|refund_id)_\$(\d+)/.exec(k);
+      const match = /coupon_(type|refund_fee|refund_id)_\$?(\d+)/.exec(k);
       if (match) {
         if (!refund.coupon) {
           refund.coupon = [];
@@ -474,7 +474,7 @@ export class WechatPay {
     const data = await this._processResponse(ret, signType);
     const refund = <Refund>{};
     Object.keys(data).forEach((k) => {
-      const match = /([a-z_]+)_\$(\d+)(?:_\$(\d)+)?/.exec(k);
+      const match = /([a-z_]+)_\$?(\d+)(?:_\$?(\d)+)?/.exec(k);
       if (match) {
         if (!refund.refund) {
           refund.refund = [];
