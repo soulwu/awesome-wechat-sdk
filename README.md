@@ -27,8 +27,8 @@ Set default options for urllib request.
 
 #### api.registerAccessTokenHandler(handler)
   - handler &lt;object&gt;
-    - handler.loadAccessToken &lt;Function&gt; The handler for load access token, should return a promise which resolved with an instance of AccessToken.
-    - handler.saveAccessToken &lt;Function&gt; The handler for save access token, accept an instance of AccessToken as parameter, should return a promise which resolved with void.
+    - handler.loadAccessToken &lt;Function&gt; The handler for load access token, should return a promise which resolved with an instance of [AccessToken](#class-accesstoken).
+    - handler.saveAccessToken &lt;Function&gt; The handler for save access token, accept an instance of [AccessToken](#class-accesstoken) as parameter, should return a promise which resolved with void.
 
 Register custom handler to handle access token. It is useful for a distributed application.
 
