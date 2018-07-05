@@ -321,6 +321,34 @@ export class WechatPay {
     };
   }
 
+  async getAppPaySign(prepayId: string, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<{
+    appid: string,
+    partnerid: string,
+    prepayid: string,
+    package: string,
+    noncestr: string,
+    timestamp: number,
+    sign: string
+  }> {
+    const timeStamp = Math.floor(Date.now() / 1000);
+    const nonceStr = createNonceStr();
+    const packageStr = 'Sign=WXPay';
+    const params = {
+      appid: this.appid,
+      partnerid: this.mchid,
+      prepayid: prepayId,
+      package: packageStr,
+      noncestr: nonceStr,
+      timestamp: timeStamp
+    };
+    const sign = await this.getSign(params, signType);
+
+    return {
+      ...params,
+      sign
+    };
+  }
+
   async queryOrder(query: {outTradeNo?: string, transactionId?: string}, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<OrderInfo> {
     const url = `${this.endpoint}/pay/orderquery`;
     const nonceStr = createNonceStr();
