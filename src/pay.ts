@@ -322,12 +322,10 @@ export class WechatPay {
   }
 
   async getAppPaySign(prepayId: string, signType: 'MD5' | 'HMAC-SHA256' = 'MD5'): Promise<{
-    appid: string,
-    partnerid: string,
-    prepayid: string,
+    partnerId: string,
     package: string,
-    noncestr: string,
-    timestamp: number,
+    nonceStr: string,
+    timeStamp: number,
     sign: string
   }> {
     const timeStamp = Math.floor(Date.now() / 1000);
@@ -344,7 +342,10 @@ export class WechatPay {
     const sign = await this.getSign(params, signType);
 
     return {
-      ...params,
+      partnerId: this.mchid,
+      package: packageStr,
+      nonceStr,
+      timeStamp,
       sign
     };
   }
